@@ -69,11 +69,13 @@ class CartPole():
                 self.update_q(current_state, action, reward, new_state, alpha)
                 current_state = new_state
                 i += 1
+            
+            print(f"Episode {e},{i},{epsilon}")
 
 if __name__ == "__main__":
 
     # Make an instance of CartPole class 
-    solver = CartPole(n_episodes = 10)
+    solver = CartPole(n_episodes = 100)
     solver.run()
-    print(solver.Q)
+    print(f"Shape: {solver.Q.shape} \n Q = \n {solver.Q}")
     solver.env.close()
