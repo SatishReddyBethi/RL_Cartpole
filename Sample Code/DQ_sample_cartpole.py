@@ -116,7 +116,7 @@ def main():
   #target_model.set_weights(action_model.get_weights())
 
   env = gym.make('CartPole-v0')
-  env = wrappers.Monitor(env, '/tmp/cartpole-experiment-1')
+  # env = wrappers.Monitor(env, '/tmp/cartpole-experiment-1')
 
   for episode in range(NUM_EPISODES):
     observation = env.reset()
@@ -127,8 +127,8 @@ def main():
       old_observation = observation
     
     # rendering the sequence every 10 frames
-    #   if episode % 10 == 0:
-    #     env.render()
+      if episode % 10 == 0:
+        env.render()
 
       if np.random.random() < random_action_probability:
         action = np.random.choice(range(ACTIONS_DIM))

@@ -3,7 +3,7 @@ import numpy as np
 import math
 
 class My_QL():
-    def __init__(self,Environment,alpha = 1.0,min_gamma = 0.1,min_epsilon = 0.1,MAX_STEPS = 300,MAX_EPISODES = 100,MAX_STATES = 10,buckets=(1, 1, 6, 12,),monitor=False):
+    def __init__(self,Environment,alpha = 1.0,revolving_decay = True, min_gamma = 0.1,min_epsilon = 0.1,MAX_STEPS = 300,MAX_EPISODES = 100,MAX_STATES = 10,buckets=(1, 1, 6, 12,),monitor=False,SHOW_EVERY=1000):
         self.env = Environment
         # self.gamma = gamma # Q learning rate
         self.min_gamma = min_gamma # learning rate
@@ -14,13 +14,14 @@ class My_QL():
         self.MAX_STEPS = MAX_STEPS
         self.MAX_EPISODES = MAX_EPISODES
         self.MAX_STATES = MAX_STATES
-        # self.Q = np.zeros((10,10,10,10,self.env.action_space.n)) # 10 x 10 x 10 x 10 x 2   
-        self.Q = np.zeros((1,1,6,12,self.env.action_space.n)) # 1 x 1 x 6 x 12 x 2   
+        # self.Q = np.zeros((MAX_STATES,MAX_STATES,MAX_STATES,MAX_STATES,self.env.action_space.n)) # 10 x 10 x 10 x 10 x 2   
+        self.Q = np.zeros(buckets + (self.env.action_space.n,)) # 1 x 1 x 6 x 12 x 2   
         self.buckets = buckets
         # print(self.Q.shape)
         # self.gamma = 0.9
         self.ada_divisor = 25 # only for development purposes
-        self.SHOW_EVERY = 1000 #Render every 100 episodes
+        self.SHOW_EVERY = SHOW_EVERY #Render every 100 episodes
+        self.revolving_decay = revolving_decay
         if MAX_STEPS is not None: 
             self.env._max_episode_steps = MAX_STEPS
         if monitor: 
@@ -28,13 +29,23 @@ class My_QL():
 
     def run(self):
         counter = 0
+        ep_batch = 0
         for e in range(self.MAX_EPISODES):
+
+            if(self.get_epsilon(ep_batch) == self.min_epsilon):
+                ep_batch = 0
+            ep_batch +=1
+
+            if not self.revolving_decay:
+                ep_batch = e
             # Reset Environment
             obs = self.env.reset()
             
             # Setting epsilon and gamma
-            epsilon = self.get_epsilon(e)
-            gamma = self.get_gamma(e)
+            epsilon = self.get_epsilon(ep_batch)
+            # epsilon = 0.5
+            gamma = self.get_gamma(ep_batch)
+            # gamma = 0.9
             # gamma = self.gamma
             
             #discritizing current state
@@ -43,6 +54,8 @@ class My_QL():
             for i in range(self.MAX_STEPS):
                 # Render Environment
                 if(e % self.SHOW_EVERY == 0):
+                    epsilon = 0
+                    gamma = 0
                     self.env.render()
                 # getting random probability
                 prob = np.random.rand()
@@ -80,7 +93,7 @@ class My_QL():
                 break
         
         # Render the Result for n times the training steps
-        n = 2
+        n = 1
         curr_state = self.discretize(self.env.reset())
         for i in range(self.MAX_STEPS*n):
                 # Render Environment
@@ -92,6 +105,9 @@ class My_QL():
 
                 # Discritizing new_state
                 curr_state = self.discretize(Obs)
+
+                if(done):
+                    break
     # --------------------------------------------------------------------------------------------------------------------------------------
 
     def discretize(self,observation):
@@ -280,8 +296,8 @@ class Q_Learning():
     
             
 
-env = gym.make('CartPole-v1')
-Q = My_QL(env,min_epsilon = 0.1,MAX_STEPS = 300,MAX_EPISODES = 10000,MAX_STATES = 10)
+env = gym.make('CartPole-v0')
+Q = My_QL(env,min_epsilon = 0.1,MAX_STEPS = 300,MAX_EPISODES = 100000,MAX_STATES = 5,SHOW_EVERY = 10000,revolving_decay = False, buckets=(10,10,20,20))
 Q.run()
 Q.env.close()
 # print(Q.env.observation_space.high-Q.env.observation_space.low)
